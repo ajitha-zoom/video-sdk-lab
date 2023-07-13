@@ -112,8 +112,8 @@ while (passcode==null || passcode == "") {
 meetingArgs.passcode = passcode;
 
 
-//fetch("http://18.191.115.14:3000", {
-fetch(`/api/`, {
+fetch("https://zlab.zoom.us/vsdk-auth", {
+//fetch(`/api/`, {
   method: 'POST',
   headers: {
     'Accept': 'application/json',
