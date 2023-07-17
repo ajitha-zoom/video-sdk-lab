@@ -8,8 +8,7 @@ import reportWebVitals from './reportWebVitals';
 import ZoomContext from './context/zoom-context';
 import { devConfig } from './config/dev';
 //import { b64DecodeUnicode, generateVideoToken } from './utils/util';
-import { b64DecodeUnicode} from './utils/util';
-
+import { b64DecodeUnicode } from './utils/util';
 
 let meetingArgs: any = Object.fromEntries(new URLSearchParams(location.search));
 // Add enforceGalleryView to turn on the gallery view without SharedAddayBuffer
@@ -67,7 +66,7 @@ if (meetingArgs.web) {
 }
 
 if (!meetingArgs?.cloud_recording_option) {
-  meetingArgs.cloud_recording_option = "0";
+  meetingArgs.cloud_recording_option = '0';
 }
 if (!meetingArgs?.cloud_recording_election) {
   meetingArgs.cloud_recording_election = '';
@@ -93,30 +92,29 @@ let namefromPrompt = null;
 let sessionName = null;
 let passcode = null;
 
-while (namefromPrompt==null || namefromPrompt == "") {
-    namefromPrompt = prompt("Enter your name", "");
+while (namefromPrompt == null || namefromPrompt == '') {
+  namefromPrompt = prompt('Enter your name', '');
 }
 console.log(namefromPrompt);
 meetingArgs.name = namefromPrompt;
 
-while (sessionName==null || sessionName == "") {
-  sessionName = prompt("Enter session name", "");
+while (sessionName == null || sessionName == '') {
+  sessionName = prompt('Enter session name', '');
 }
 console.log(sessionName);
 meetingArgs.sessionKey = sessionName;
 meetingArgs.topic = sessionName;
 
-while (passcode==null || passcode == "") {
-  passcode = prompt("Enter passcode", "");
+while (passcode == null || passcode == '') {
+  passcode = prompt('Enter passcode', '');
 }
 meetingArgs.passcode = passcode;
 
-
-fetch("https://zlab.zoom.us/vsdk-auth", {
-//fetch(`/api/`, {
+fetch('https://zlab.zoom.us/vsdk-auth', {
+  //fetch(`/api/`, {
   method: 'POST',
   headers: {
-    'Accept': 'application/json',
+    Accept: 'application/json',
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
@@ -124,28 +122,33 @@ fetch("https://zlab.zoom.us/vsdk-auth", {
     role: meetingArgs.role,
     userIdentity: meetingArgs.userIdentity,
     sessionKey: meetingArgs.sessionKey,
-    geoRegions: "US,AU,CA,IN,CN,BR,MX,HK,SG,JP,DE,NL",
+    geoRegions: 'US,AU,CA,IN,CN,BR,MX,HK,SG,JP,DE,NL',
     cloudRecordingOption: 1,
     cloudRecordingElection: 0
   })
-}).then((response) => {
-  return response.json()
-}).then((data) => {
-  console.log("ajtha signature")
-  console.log(data.signature)
-  meetingArgs.signature = data.signature;
-  const zmClient = ZoomVideo.createClient();
-ReactDOM.render(
-  <React.StrictMode>
-    <ZoomContext.Provider value={zmClient}>
-      <App meetingArgs={meetingArgs as any} />
-    </ZoomContext.Provider>
-  </React.StrictMode>,
-  document.getElementById('root')
-);
-}).catch((error) => {
-  console.log(error)
 })
+  .then((response) => {
+    return response.json();
+  })
+  .then((data) => {
+    console.log('ajtha signature');
+    console.log(data.signature);
+    meetingArgs.signature = data.signature;
+    const zmClient = ZoomVideo.createClient();
+
+    ReactDOM.render(
+      <React.StrictMode>
+        <ZoomContext.Provider value={zmClient}>
+          <App meetingArgs={meetingArgs as any} />
+        </ZoomContext.Provider>
+      </React.StrictMode>,
+      document.getElementById('root')
+    );
+  })
+  .catch((error) => {
+    console.log(error);
+  });
+
 console.log('=====================================');
 console.log('meetingArgs', meetingArgs);
 
