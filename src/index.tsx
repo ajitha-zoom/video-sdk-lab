@@ -110,7 +110,7 @@ while (passcode == null || passcode == '') {
 }
 meetingArgs.passcode = passcode;
 
-fetch('https://zlab.zoom.us/vsdk-auth', {
+fetch('https://or116ttpz8.execute-api.us-west-1.amazonaws.com/default/videosdk', {
   //fetch(`/api/`, {
   method: 'POST',
   headers: {
