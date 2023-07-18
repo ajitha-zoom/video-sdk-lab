@@ -113,6 +113,7 @@ meetingArgs.passcode = passcode;
 fetch('https://or116ttpz8.execute-api.us-west-1.amazonaws.com/default/videosdk', {
   //fetch(`/api/`, {
   method: 'POST',
+  mode: 'no-cors',
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json'
