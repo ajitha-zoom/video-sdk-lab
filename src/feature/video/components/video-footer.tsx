@@ -1,18 +1,16 @@
-import React, { useState, useCallback, useContext, useEffect, MutableRefObject } from 'react';
+import { useState, useCallback, useContext, useEffect, MutableRefObject } from 'react';
 import classNames from 'classnames';
 import { message } from 'antd';
 import ZoomContext from '../../../context/zoom-context';
-import RecordingContext from '../../../context/recording-context';
 import CameraButton from './camera';
 import MicrophoneButton from './microphone';
 import { ScreenShareButton } from './screen-share';
 import AudioVideoStatisticModal from './audio-video-statistic';
 import ZoomMediaContext from '../../../context/media-context';
-import LiveTranscriptionContext from '../../../context/live-transcription';
 import { useUnmount, useMount } from '../../../hooks';
 import { MediaDevice } from '../video-types';
 import './video-footer.scss';
-import { isAndroidOrIOSBrowser } from '../../../utils/platform';
+import { isAndroidOrIOSBrowser, isIOSMobile } from '../../../utils/platform';
 import { getPhoneCallStatusDescription, SELF_VIDEO_ID } from '../video-constants';
 import { getRecordingButtons, RecordButtonProps, RecordingButton } from './recording';
 import {
@@ -23,30 +21,34 @@ import {
   DialOutOption,
   VideoCapturingState,
   SharePrivilege,
-  MobileVideoFacingMode
+  MobileVideoFacingMode,
+  LiveStreamStatus,
+  ShareStatus
 } from '@zoom/videosdk';
 import { LiveTranscriptionButton } from './live-transcription';
 import { LeaveButton } from './leave';
 import { TranscriptionSubtitle } from './transcription-subtitle';
-import { current } from 'immer';
 import IsoRecordingModal from './recording-ask-modal';
+import { LiveStreamButton, LiveStreamModal } from './live-stream';
+import { IconFont } from '../../../component/icon-font';
+import { VideoMaskModel } from './video-mask-modal';
 interface VideoFooterProps {
   className?: string;
-  shareRef?: MutableRefObject<HTMLCanvasElement | null>;
+  selfShareCanvas?: HTMLCanvasElement | HTMLVideoElement | null;
   sharing?: boolean;
 }
 
 const isAudioEnable = typeof AudioWorklet === 'function';
 const VideoFooter = (props: VideoFooterProps) => {
-  const { className, shareRef, sharing } = props;
+  const { className, selfShareCanvas, sharing } = props;
   const [isStartedAudio, setIsStartedAudio] = useState(false);
   const [isStartedVideo, setIsStartedVideo] = useState(false);
   const [audio, setAudio] = useState('');
   const [isSupportPhone, setIsSupportPhone] = useState(false);
   const [phoneCountryList, setPhoneCountryList] = useState<any[]>([]);
   const [phoneCallStatus, setPhoneCallStatus] = useState<DialoutState>();
-  const [isStartedScreenShare, setIsStartedScreenShare] = useState(false);
   const [isStartedLiveTranscription, setIsStartedLiveTranscription] = useState(false);
+  const [isDisableCaptions, setIsDisableCaptions] = useState(false);
   const [isMirrored, setIsMirrored] = useState(false);
   const [isBlur, setIsBlur] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -62,21 +64,30 @@ const VideoFooter = (props: VideoFooterProps) => {
   const [sharePrivilege, setSharePrivileg] = useState(SharePrivilege.Unlocked);
   const [caption, setCaption] = useState({ text: '', isOver: false });
   const [activePlaybackUrl, setActivePlaybackUrl] = useState('');
+  const [isMicrophoneForbidden, setIsMicrophoneForbidden] = useState(false);
 
+  const zmClient = useContext(ZoomContext);
   const { mediaStream } = useContext(ZoomMediaContext);
-  const liveTranscriptionClient = useContext(LiveTranscriptionContext);
-  const recordingClient = useContext(RecordingContext);
+
+  const liveTranscriptionClient = zmClient.getLiveTranscriptionClient();
+  const liveStreamClient = zmClient.getLiveStreamClient();
+  const recordingClient = zmClient.getRecordingClient();
   const [recordingStatus, setRecordingStatus] = useState<'' | RecordingStatus>(
     recordingClient?.getCloudRecordingStatus() || ''
   );
   const [recordingIsoStatus, setRecordingIsoStatus] = useState<'' | RecordingStatus>('');
-  const zmClient = useContext(ZoomContext);
+  const [liveStreamVisible, setLiveStreamVisible] = useState(false);
+  const [liveStreamStatus, setLiveStreamStatus] = useState(liveStreamClient?.getLiveStreamStatus());
+  // Video Mask
+  const [videoMaskVisible, setVideoMaskVisible] = useState(false);
+
   const onCameraClick = useCallback(async () => {
     if (isStartedVideo) {
       await mediaStream?.stopVideo();
       setIsStartedVideo(false);
     } else {
-      if (mediaStream?.isRenderSelfViewWithVideoElement()) {
+      const temporaryException = isIOSMobile() && window.crossOriginIsolated; // add ios mobile exception for test backward compatible.
+      if (mediaStream?.isRenderSelfViewWithVideoElement() && !temporaryException) {
         const videoElement = document.querySelector(`#${SELF_VIDEO_ID}`) as HTMLVideoElement;
         if (videoElement) {
           await mediaStream?.startVideo({ videoElement });
@@ -114,8 +125,14 @@ const VideoFooter = (props: VideoFooterProps) => {
         setIsMuted(true);
       }
     } else {
-      // await mediaStream?.startAudio({ speakerOnly: true });
-      await mediaStream?.startAudio();
+      try {
+        await mediaStream?.startAudio();
+      } catch (e: any) {
+        if (e.type === 'INSUFFICIENT_PRIVILEGES' && e.reason === 'USER_FORBIDDEN_MICROPHONE') {
+          setIsMicrophoneForbidden(true);
+        }
+        console.warn(e);
+      }
       setIsStartedAudio(true);
     }
   }, [mediaStream, isStartedAudio, isMuted]);
@@ -160,16 +177,18 @@ const VideoFooter = (props: VideoFooterProps) => {
     setIsMirrored(!isMirrored);
   };
   const onBlurBackground = async () => {
-    const vbStatus = mediaStream?.getVirtualbackgroundStatus();
-    if (vbStatus?.isVBPreloadReady) {
-      if (!isBlur) {
-        await mediaStream?.updateVirtualBackgroundImage('blur');
-      } else {
+    const isSupportVirtualBackground = mediaStream?.isSupportVirtualBackground();
+    if (isSupportVirtualBackground) {
+      if (isBlur) {
         await mediaStream?.updateVirtualBackgroundImage(undefined);
+      } else {
+        await mediaStream?.updateVirtualBackgroundImage('blur');
       }
-
-      setIsBlur(!isBlur);
+    } else {
+      setVideoMaskVisible(true);
     }
+
+    setIsBlur(!isBlur);
   };
   const onPhoneCall = async (code: string, phoneNumber: string, name: string, option: DialOutOption) => {
     await mediaStream?.inviteByPhone(code, phoneNumber, name, option);
@@ -205,35 +224,46 @@ const VideoFooter = (props: VideoFooterProps) => {
     }
   }, []);
   const onScreenShareClick = useCallback(async () => {
-    if (!isStartedScreenShare && shareRef && shareRef.current) {
-      await mediaStream?.startShareScreen(shareRef.current, { requestReadReceipt: true });
-      setIsStartedScreenShare(true);
-    } else if (isStartedScreenShare) {
-      await mediaStream?.stopShareScreen();
-      setIsStartedScreenShare(false);
+    if (mediaStream?.getShareStatus() === ShareStatus.End && selfShareCanvas) {
+      await mediaStream?.startShareScreen(selfShareCanvas, { requestReadReceipt: true });
     }
-  }, [mediaStream, isStartedScreenShare, shareRef]);
+  }, [mediaStream, selfShareCanvas]);
 
   const onLiveTranscriptionClick = useCallback(async () => {
-    if (!isStartedLiveTranscription) {
+    if (isDisableCaptions) {
+      message.info('Captions has been disable by host.');
+    } else if (isStartedLiveTranscription) {
+      message.info('Live transcription has started.');
+    } else if (!isStartedLiveTranscription) {
       await liveTranscriptionClient?.startLiveTranscription();
       setIsStartedLiveTranscription(true);
     }
-  }, [isStartedLiveTranscription, liveTranscriptionClient]);
+  }, [isStartedLiveTranscription, isDisableCaptions, liveTranscriptionClient]);
+
+  const onDisableCaptions = useCallback(
+    async (disable: boolean) => {
+      if (disable && !isDisableCaptions) {
+        await liveTranscriptionClient?.disableCaptions(disable);
+        setIsStartedLiveTranscription(false);
+        setIsDisableCaptions(true);
+      } else if (!disable && isDisableCaptions) {
+        await liveTranscriptionClient?.disableCaptions(disable);
+        setIsDisableCaptions(false);
+      }
+    },
+    [isDisableCaptions, liveTranscriptionClient]
+  );
 
   const onLeaveClick = useCallback(async () => {
-    console.log('onLeaveClick');
     await zmClient.leave();
   }, [zmClient]);
 
   const onEndClick = useCallback(async () => {
-    console.log('onEndClick');
     await zmClient.leave(true);
   }, [zmClient]);
 
   const onPassivelyStopShare = useCallback(({ reason }) => {
     console.log('passively stop reason:', reason);
-    setIsStartedScreenShare(false);
   }, []);
   const onDeviceChange = useCallback(() => {
     if (mediaStream) {
@@ -302,12 +332,12 @@ const VideoFooter = (props: VideoFooterProps) => {
   const onShareAudioChange = useCallback(
     (payload) => {
       const { state } = payload;
-      if (!mediaStream?.isSupportMicrophoneAndShareAudioSimultaneously()) {
-        if (state === 'on') {
+      if (state === 'on') {
+        if (!mediaStream?.isSupportMicrophoneAndShareAudioSimultaneously()) {
           setIsComputerAudioDisabled(true);
-        } else if (state === 'off') {
-          setIsComputerAudioDisabled(false);
         }
+      } else if (state === 'off') {
+        setIsComputerAudioDisabled(false);
       }
     },
     [mediaStream]
@@ -331,6 +361,14 @@ const VideoFooter = (props: VideoFooterProps) => {
       isOver: done
     });
   }, []);
+
+  const onCaptionDisable = useCallback((payload) => {
+    setIsDisableCaptions(payload);
+    if (payload) {
+      setIsStartedLiveTranscription(false);
+    }
+  }, []);
+
   const onCanSeeMyScreen = useCallback(() => {
     message.info('Users can now see your screen', 1);
   }, []);
@@ -349,6 +387,19 @@ const VideoFooter = (props: VideoFooterProps) => {
     [isStartedAudio, activePlaybackUrl, mediaStream]
   );
 
+  const onLiveStreamClick = useCallback(() => {
+    if (liveStreamStatus === LiveStreamStatus.Ended) {
+      setLiveStreamVisible(true);
+    } else if (liveStreamStatus === LiveStreamStatus.InProgress) {
+      liveStreamClient?.stopLiveStream();
+    }
+  }, [liveStreamStatus, liveStreamClient]);
+  const onLiveStreamStatusChange = useCallback((status) => {
+    setLiveStreamStatus(status);
+    if (status === LiveStreamStatus.Timeout) {
+      message.error('Start live streaming timeout');
+    }
+  }, []);
   useEffect(() => {
     zmClient.on('current-audio-change', onHostAudioMuted);
     zmClient.on('passively-stop-share', onPassivelyStopShare);
@@ -361,7 +412,9 @@ const VideoFooter = (props: VideoFooterProps) => {
     zmClient.on('host-ask-unmute-audio', onHostAskToUnmute);
     zmClient.on('caption-status', onCaptionStatusChange);
     zmClient.on('caption-message', onCaptionMessage);
+    zmClient.on('caption-host-disable', onCaptionDisable);
     zmClient.on('share-can-see-screen', onCanSeeMyScreen);
+    zmClient.on('live-stream-status', onLiveStreamStatusChange);
     return () => {
       zmClient.off('current-audio-change', onHostAudioMuted);
       zmClient.off('passively-stop-share', onPassivelyStopShare);
@@ -374,7 +427,9 @@ const VideoFooter = (props: VideoFooterProps) => {
       zmClient.off('host-ask-unmute-audio', onHostAskToUnmute);
       zmClient.off('caption-status', onCaptionStatusChange);
       zmClient.off('caption-message', onCaptionMessage);
+      zmClient.off('caption-host-disable', onCaptionDisable);
       zmClient.off('share-can-see-screen', onCanSeeMyScreen);
+      zmClient.off('live-stream-status', onLiveStreamStatusChange);
     };
   }, [
     zmClient,
@@ -389,7 +444,9 @@ const VideoFooter = (props: VideoFooterProps) => {
     onCaptionStatusChange,
     onCaptionMessage,
     onCanSeeMyScreen,
-    onRecordingISOChange
+    onRecordingISOChange,
+    onCaptionDisable,
+    onLiveStreamStatusChange
   ]);
   useUnmount(() => {
     if (isStartedAudio) {
@@ -398,9 +455,7 @@ const VideoFooter = (props: VideoFooterProps) => {
     if (isStartedVideo) {
       mediaStream?.stopVideo();
     }
-    if (isStartedScreenShare) {
-      mediaStream?.stopShareScreen();
-    }
+    mediaStream?.stopShareScreen();
   });
   useMount(() => {
     if (mediaStream) {
@@ -449,6 +504,7 @@ const VideoFooter = (props: VideoFooterProps) => {
           activeMicrophone={activeMicrophone}
           activeSpeaker={activeSpeaker}
           disabled={isComputerAudioDisabled}
+          isMicrophoneForbidden={isMicrophoneForbidden}
         />
       )}
       <CameraButton
@@ -472,7 +528,6 @@ const VideoFooter = (props: VideoFooterProps) => {
         <ScreenShareButton
           sharePrivilege={sharePrivilege}
           isHostOrManager={zmClient.isHost() || zmClient.isManager()}
-          isStartedScreenShare={isStartedScreenShare}
           onScreenShareClick={onScreenShareClick}
           onSharePrivilegeClick={async (privilege) => {
             await mediaStream?.setSharePrivilege(privilege);
@@ -495,10 +550,31 @@ const VideoFooter = (props: VideoFooterProps) => {
         <>
           <LiveTranscriptionButton
             isStartedLiveTranscription={isStartedLiveTranscription}
+            isDisableCaptions={isDisableCaptions}
+            isHost={zmClient.isHost()}
+            onDisableCaptions={onDisableCaptions}
             onLiveTranscriptionClick={onLiveTranscriptionClick}
           />
           <TranscriptionSubtitle text={caption.text} />
         </>
+      )}
+      {liveStreamClient?.isLiveStreamEnabled() && zmClient.isHost() && (
+        <>
+          <LiveStreamButton
+            isLiveStreamOn={liveStreamStatus === LiveStreamStatus.InProgress}
+            onLiveStreamClick={onLiveStreamClick}
+          />
+          <LiveStreamModal
+            visible={liveStreamVisible}
+            setVisible={setLiveStreamVisible}
+            onStartLiveStream={(streanUrl: string, streamKey: string, broadcastUrl: string) => {
+              liveStreamClient.startLiveStream(streanUrl, streamKey, broadcastUrl);
+            }}
+          />
+        </>
+      )}
+      {liveStreamStatus === LiveStreamStatus.InProgress && (
+        <IconFont type="icon-live" style={{ position: 'fixed', top: '45px', left: '10px', color: '#f00' }} />
       )}
       <LeaveButton onLeaveClick={onLeaveClick} isHost={zmClient.isHost()} onEndClick={onEndClick} />
 
@@ -520,6 +596,9 @@ const VideoFooter = (props: VideoFooterProps) => {
             recordingClient?.declineIndividualRecording();
           }}
         />
+      )}
+      {!mediaStream?.isSupportVirtualBackground() && (
+        <VideoMaskModel visible={videoMaskVisible} setVisible={setVideoMaskVisible} isMirrored={isMirrored} />
       )}
     </div>
   );

@@ -35,6 +35,13 @@ import { ReactComponent as IconSwitch } from './svgs/icon-switch.svg';
 import { ReactComponent as IconNetworkGood } from './svgs/icon-network-good.svg';
 import { ReactComponent as IconNetworkNormal } from './svgs/icon-network-normal.svg';
 import { ReactComponent as IconNetworkBad } from './svgs/icon-network-bad.svg';
+import { ReactComponent as IconLiveStream } from './svgs/icon-live-stream.svg';
+import { ReactComponent as IconLive } from './svgs/icon-live.svg';
+import { ReactComponent as IconMove } from './svgs/icon-move.svg';
+import { ReactComponent as IconAudioOn } from './svgs/icon-audio-on.svg';
+import { ReactComponent as IconAudioOff } from './svgs/icon-audio-off.svg';
+import { ReactComponent as IconAudioWarning } from './svgs/icon-audio-warning.svg';
+import { ReactComponent as IconAudioAnimation } from './svgs/icon-audio-active-animated.svg';
 const iconComponentMap: { [key: string]: any } = {
   'icon-advanced': IconAdvanced,
   'icon-chat': IconChat,
@@ -68,7 +75,14 @@ const iconComponentMap: { [key: string]: any } = {
   'icon-switch': IconSwitch,
   'icon-network-good': IconNetworkGood,
   'icon-network-normal': IconNetworkNormal,
-  'icon-network-bad': IconNetworkBad
+  'icon-network-bad': IconNetworkBad,
+  'icon-live-stream': IconLiveStream,
+  'icon-live': IconLive,
+  'icon-move': IconMove,
+  'icon-audio-on': IconAudioOn,
+  'icon-audio-off': IconAudioOff,
+  'icon-audio-warning': IconAudioWarning,
+  'icon-audio-animation': IconAudioAnimation
 };
 interface IconFontProps {
   type: string;

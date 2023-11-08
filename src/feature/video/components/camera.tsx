@@ -9,6 +9,7 @@ interface CameraButtonProps {
   isStartedVideo: boolean;
   isMirrored?: boolean;
   isBlur?: boolean;
+  isPreview?: boolean;
   onCameraClick: () => void;
   onSwitchCamera: (deviceId: string) => void;
   onMirrorVideo?: () => void;
@@ -21,9 +22,12 @@ interface CameraButtonProps {
   activePlaybackUrl?: string;
 }
 const videoPlaybacks = [
-  { title: 'Video 1', url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' },
-  { title: 'Video 2', url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4' },
-  { title: 'Video 3', url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4' }
+  { title: 'Video 1', url: 'https://source.zoom.us/brand/mp4/Using%20the%20Zoom%20PWA.mp4' },
+  { title: 'Video 2', url: 'https://source.zoom.us/brand/mp4/Zoom%20Cares%20Nonprofit%20Impact.mp4' },
+  {
+    title: 'Video 3',
+    url: 'https://source.zoom.us/brand/mp4/Zoom%20One%20-%20Team%20Chat%2C%20Phone%2C%20Email%2C%20and%20more.mp4'
+  }
 ];
 const CameraButton = (props: CameraButtonProps) => {
   const {
@@ -33,6 +37,7 @@ const CameraButton = (props: CameraButtonProps) => {
     activeCamera,
     isMirrored,
     isBlur,
+    isPreview,
     activePlaybackUrl,
     onCameraClick,
     onSwitchCamera,
@@ -68,22 +73,23 @@ const CameraButton = (props: CameraButtonProps) => {
         ),
         'group'
       ),
-      getAntdItem(
-        'Select a Video Playback',
-        'playback',
-        undefined,
-        videoPlaybacks.map((item) =>
-          getAntdItem(item.title, item.url, item.url === activePlaybackUrl && <CheckOutlined />)
+      !isPreview &&
+        getAntdItem(
+          'Select a Video Playback',
+          'playback',
+          undefined,
+          videoPlaybacks.map((item) =>
+            getAntdItem(item.title, item.url, item.url === activePlaybackUrl && <CheckOutlined />)
+          ),
+          'group'
         ),
-        'group'
-      ),
       getAntdItem('', 'd1', undefined, undefined, 'divider'),
-      getAntdItem('Mirror My Video', 'mirror', isMirrored && <CheckOutlined />),
+      !isPreview && getAntdItem('Mirror My Video', 'mirror', isMirrored && <CheckOutlined />),
       mediaStream?.isSupportVirtualBackground()
         ? getAntdItem('Blur My Background', 'blur', isBlur && <CheckOutlined />)
-        : undefined,
-      getAntdItem('', 'd2', undefined, undefined, 'divider'),
-      getAntdItem('Video Statistic', 'statistic')
+        : getAntdItem('Mask My Background', 'blur'),
+      !isPreview && getAntdItem('', 'd2', undefined, undefined, 'divider'),
+      !isPreview && getAntdItem('Video Statistic', 'statistic')
     ].filter(Boolean) as MenuItem[]);
   return (
     <div className={classNames('camera-footer', className)}>

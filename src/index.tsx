@@ -7,14 +7,13 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import ZoomContext from './context/zoom-context';
 import { devConfig } from './config/dev';
-//import { b64DecodeUnicode, generateVideoToken } from './utils/util';
-import { b64DecodeUnicode } from './utils/util';
+import { b64DecodeUnicode, generateVideoToken } from './utils/util';
 
 let meetingArgs: any = Object.fromEntries(new URLSearchParams(location.search));
 // Add enforceGalleryView to turn on the gallery view without SharedAddayBuffer
 if (!meetingArgs.sdkKey || !meetingArgs.topic || !meetingArgs.name || !meetingArgs.signature) {
   meetingArgs = { ...devConfig, ...meetingArgs };
-  meetingArgs.enforceGalleryView = true;
+  meetingArgs.enforceGalleryView = !window?.crossOriginIsolated;
 }
 
 if (meetingArgs.web) {
@@ -72,7 +71,15 @@ if (!meetingArgs?.cloud_recording_election) {
   meetingArgs.cloud_recording_election = '';
 }
 
-/*if (!meetingArgs.signature && meetingArgs.sdkSecret && meetingArgs.topic) {
+if (meetingArgs?.telemetry_tracking_id) {
+  try {
+    meetingArgs.telemetry_tracking_id = b64DecodeUnicode(meetingArgs.telemetry_tracking_id);
+  } catch (e) {}
+} else {
+  meetingArgs.telemetry_tracking_id = '';
+}
+
+/* if (!meetingArgs.signature && meetingArgs.sdkSecret && meetingArgs.topic) {
   meetingArgs.signature = generateVideoToken(
     meetingArgs.sdkKey,
     meetingArgs.sdkSecret,
@@ -113,11 +120,6 @@ meetingArgs.passcode = passcode;
 fetch('https://or116ttpz8.execute-api.us-west-1.amazonaws.com/default/videosdk', {
   //fetch(`/api/`, {
   method: 'POST',
-  mode: 'no-cors',
-  headers: {
-    Accept: 'application/json',
-    'Content-Type': 'application/json'
-  },
   body: JSON.stringify({
     sessionName: meetingArgs.topic,
     role: meetingArgs.role,
