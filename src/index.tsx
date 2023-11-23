@@ -3,7 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ZoomVideo from '@zoom/videosdk';
 import './index.css';
-import App from './App';
+import App from './App';saddasd
 import reportWebVitals from './reportWebVitals';
 import ZoomContext from './context/zoom-context';
 import { devConfig } from './config/dev';
@@ -117,7 +117,7 @@ while (passcode == null || passcode == '') {
 }
 meetingArgs.passcode = passcode;
 //fetch('https://or116ttpz8.execute-api.us-west-1.amazonaws.com/default/videosdk', {
-fetch('https://y9m76f0766.execute-api.us-east-1.amazonaws.com/default/vsdk_auth_endpoint', {
+fetch('https://bgctn3ueuc.execute-api.us-east-1.amazonaws.com/latest', {
   //fetch(`/api/`, {
   method: 'POST',
   body: JSON.stringify({
