@@ -130,6 +130,7 @@ fetch('https://bgctn3ueuc.execute-api.us-east-1.amazonaws.com/testing', {
     userIdentity: meetingArgs.userIdentity,
     sessionKey: meetingArgs.sessionKey,
     geoRegions: 'US,AU,CA,IN,CN,BR,MX,HK,SG,JP,DE,NL',
+    pwd: meetingArgs.passcode,
     cloudRecordingOption: 1,
     cloudRecordingElection: 0
   })
