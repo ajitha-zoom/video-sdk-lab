@@ -117,7 +117,7 @@ while (passcode == null || passcode == '') {
 }
 meetingArgs.passcode = passcode;
 //fetch('https://or116ttpz8.execute-api.us-west-1.amazonaws.com/default/videosdk', {
-fetch('https://bgctn3ueuc.execute-api.us-east-1.amazonaws.com/latest', {
+fetch('https://bgctn3ueuc.execute-api.us-east-1.amazonaws.com/testing', {
   //fetch(`/api/`, {
   method: 'POST',
   body: JSON.stringify({
