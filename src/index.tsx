@@ -120,7 +120,10 @@ meetingArgs.passcode = passcode;
 fetch('https://bgctn3ueuc.execute-api.us-east-1.amazonaws.com/testing', {
   //fetch(`/api/`, {
   method: 'POST',
-  headers: new Headers({'content-type': 'application/json'}),
+  headers: {
+            'Content-Type':'application/json',
+            'Accept':'application/json'
+        },
   body: JSON.stringify({
     sessionName: meetingArgs.topic,
     role: meetingArgs.role,
