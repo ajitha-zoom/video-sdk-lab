@@ -3,7 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ZoomVideo from '@zoom/videosdk';
 import './index.css';
-import App from './App';saddasd
+import App from './App';
 import reportWebVitals from './reportWebVitals';
 import ZoomContext from './context/zoom-context';
 import { devConfig } from './config/dev';
