@@ -116,8 +116,8 @@ while (passcode == null || passcode == '') {
   passcode = prompt('Enter passcode', '');
 }
 meetingArgs.passcode = passcode;
-
-fetch('https://or116ttpz8.execute-api.us-west-1.amazonaws.com/default/videosdk', {
+//fetch('https://or116ttpz8.execute-api.us-west-1.amazonaws.com/default/videosdk', {
+fetch('https://oq51ds0o8c.execute-api.us-east-1.amazonaws.com/default/vsdk_auth_endpoint', {
   //fetch(`/api/`, {
   method: 'POST',
   body: JSON.stringify({
