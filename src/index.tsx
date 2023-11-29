@@ -127,7 +127,7 @@ fetch('https://bgctn3ueuc.execute-api.us-east-1.amazonaws.com/testing', {
   body: JSON.stringify({
     sessionName: meetingArgs.topic,
     role: meetingArgs.role,
-    userIdentity: meetingArgs.userIdentity,
+    userIdentity: meetingArgs.name,
     sessionKey: meetingArgs.sessionKey,
     geoRegions: 'US,AU,CA,IN,CN,BR,MX,HK,SG,JP,DE,NL',
     pwd: meetingArgs.password,
