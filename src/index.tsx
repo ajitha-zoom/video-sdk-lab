@@ -68,7 +68,7 @@ if (!meetingArgs?.cloud_recording_option) {
   meetingArgs.cloud_recording_option = '0';
 }
 if (!meetingArgs?.cloud_recording_election) {
-  meetingArgs.cloud_recording_election = '';
+  meetingArgs.cloud_recording_election = '0';
 }
 
 if (meetingArgs?.telemetry_tracking_id) {
@@ -97,7 +97,7 @@ if (meetingArgs?.telemetry_tracking_id) {
 
 let namefromPrompt = null;
 let sessionName = null;
-let passcode = null;
+let password = null;
 
 while (namefromPrompt == null || namefromPrompt == '') {
   namefromPrompt = prompt('Enter your name', '');
@@ -112,10 +112,10 @@ console.log(sessionName);
 meetingArgs.sessionKey = sessionName;
 meetingArgs.topic = sessionName;
 
-while (passcode == null || passcode == '') {
-  passcode = prompt('Enter passcode', '');
+while (password == null || password == '') {
+  password = prompt('Enter password', '');
 }
-meetingArgs.passcode = passcode;
+meetingArgs.password = password;
 //fetch('https://or116ttpz8.execute-api.us-west-1.amazonaws.com/default/videosdk', {
 fetch('https://bgctn3ueuc.execute-api.us-east-1.amazonaws.com/testing', {
   //fetch(`/api/`, {
@@ -130,7 +130,7 @@ fetch('https://bgctn3ueuc.execute-api.us-east-1.amazonaws.com/testing', {
     userIdentity: meetingArgs.userIdentity,
     sessionKey: meetingArgs.sessionKey,
     geoRegions: 'US,AU,CA,IN,CN,BR,MX,HK,SG,JP,DE,NL',
-    pwd: meetingArgs.passcode,
+    pwd: meetingArgs.password,
     cloudRecordingOption: 1,
     cloudRecordingElection: 0
   })

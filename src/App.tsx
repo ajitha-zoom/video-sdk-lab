@@ -131,6 +131,7 @@ function App(props: AppProps) {
       });
       try {
         setLoadingText('Joining the session...');
+        console.log("topic:", topic);
         await zmClient.join(topic, signature, name, password).catch((e) => {
           console.log(e);
         });
@@ -200,6 +201,7 @@ function App(props: AppProps) {
   const onLeaveOrJoinSession = useCallback(async () => {
     if (status === 'closed') {
       setIsLoading(true);
+      console.log("topic:", topic);
       await zmClient.join(topic, signature, name, password);
       setIsLoading(false);
     } else if (status === 'connected') {
